@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+#
+
+__ask() {
+    read -n 1 -r -p "$1 [Y/n] "
+    echo
+
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+initialize() {
+	require_git_repo
+	require_gitflow_initialized
+	gitflow_load_settings
+
+	SCRIPT_PATH="$0"; while [ -h "$SCRIPT_PATH" ]; do SCRIPT_PATH=$(readlink "$SCRIPT_PATH"); done
+	SRC_HOOKS_DIR=$(dirname $SCRIPT_PATH)/gitflow-semver-hooks
+	# SRC_HOOKS_DIR=$(cd $(dirname "$SRC_HOOKS_DIR"); pwd)/$(basename "$SRC_HOOKS_DIR")
+}
+
+usage() {
+	OPTIONS_SPEC="\
+git flow semver
+
+Adds semantic versioning support for git-flow.
+For more information on semver, visit http://semver.org/
+--
+"
+	flags_help
+}
+
+# Parse arguments and set common variables
+parse_args() {
+	FLAGS "$@" || exit $?
+	eval set -- "${FLAGS_ARGV}"
+}
+
+# Default entry when no SUBACTION is given
+cmd_default() {
+    cmd_help
+}
+
+cmd_init() {
+	OPTIONS_SPEC="\
+git flow semver [init] [-h] [-d]
+
+Initialize semantic versioning for current repo
+--
+h,help!           Show this help
+d,defaults!       Set default configuration
+"
+  	local default_suggestion answer message_tmpl
+
+	# Define flags
+	DEFINE_boolean 'defaults' false 'set default options' d
+
+	# Parse arguments
+	parse_args "$@"
+
+    # Create a symlink to hooks.
+    for f in $(find $SRC_HOOKS_DIR -maxdepth 1 -type f -executable); do
+        ln -sf $f $GIT_CURRENT_REPO_DIR/$HOOKS_DIR/$(basename $f)
+    done
+
+    echo "Added git flow hooks to your $HOOKS_DIR directory."
+    echo
+
+    # Ask the user for automatic tag messages.
+    if flag defaults || __ask "Do you want git-flow to automaticaly set your tag messages on finish operations?"; then
+        echo 
+
+        # Ask for hotfix message template.
+        default_suggestion="Hotfix %tag%"
+        echo -n "Hotfix tag message template? [$default_suggestion] "
+        if flag defaults; then
+            echo
+        else
+            read answer
+        fi
+        [ "$answer" = "-" ] && message_tmpl= || message_tmpl=${answer:-$default_suggestion}
+
+        git config gitflow.hotfix.finish.message "$message_tmpl"
+
+        # Ask for hotfix message template.
+        default_suggestion="Release %tag%"
+        echo -n "Release tag message template? [$default_suggestion] "
+        if flag defaults; then
+            echo
+        else
+            read answer
+        fi
+        [ "$answer" = "-" ] && message_tmpl= || message_tmpl=${answer:-$default_suggestion}
+
+        git config gitflow.release.finish.message "$message_tmpl"
+
+        echo
+    fi
+}
+
+cmd_help() {
+	usage
+	exit 0
+}
