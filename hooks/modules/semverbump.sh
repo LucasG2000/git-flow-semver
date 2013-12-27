@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+. "$(dirname $0)/functions.sh"
+
 function __print_usage {
     echo "Usage: $(basename $0) [major|minor|patch|<semver>]"
     echo "    major|minor|patch: Version will be bumped accordingly."
@@ -60,10 +62,7 @@ fi
 # read version file (if version not found by tags)
 
 if [ -z "$VERSION_CURRENT" ]; then
-    if [ -z "$VERSION_FILE" ]; then
-        ROOT_DIR=$(git rev-parse --show-toplevel 2> /dev/null)
-        VERSION_FILE="$ROOT_DIR/VERSION"
-    fi
+    VERSION_FILE=$(__get_version_file)
 
     if [ -f "$VERSION_FILE" ]; then
         VERSION_CURRENT=$(cat $VERSION_FILE)

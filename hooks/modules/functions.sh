@@ -5,11 +5,7 @@ COLOR_DEFAULT=$(printf '\e[m')
 ICON_CROSS=$(printf $COLOR_RED'✘'$COLOR_DEFAULT)
 
 ROOT_DIR=$(git rev-parse --show-toplevel 2> /dev/null)
-HOOKS_DIR=$(dirname $SCRIPT_PATH)
-
-if [ -f "$ROOT_DIR/.git/git-flow-hooks-config.sh" ]; then
-    . "$ROOT_DIR/.git/git-flow-hooks-config.sh"
-fi
+BASE_DIR=$(cd $(dirname $BASH_SOURCE[0])/..; pwd)
 
 function __print_fail {
     echo -e "  $ICON_CROSS $1"
@@ -21,7 +17,7 @@ function __get_commit_files {
 
 function __get_version_file {
     if [ -z "$VERSION_FILE" ]; then
-        VERSION_FILE="VERSION"
+        VERSION_FILE=$(git config --get gitflow.semver.filename || echo ".version")
     fi
 
     echo "$ROOT_DIR/$VERSION_FILE"

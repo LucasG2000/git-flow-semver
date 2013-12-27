@@ -53,7 +53,7 @@ Initialize semantic versioning for current repo
 h,help!           Show this help
 d,defaults!       Set default configuration
 "
-  	local default_suggestion answer message_tmpl
+  	local default_suggestion answer message_tmpl version_filename
 
 	# Define flags
 	DEFINE_boolean 'defaults' false 'set default options' d
@@ -66,7 +66,7 @@ d,defaults!       Set default configuration
         ln -sf $f $GIT_CURRENT_REPO_DIR/$HOOKS_DIR/$(basename $f)
     done
 
-    echo "Added git flow hooks to your $HOOKS_DIR directory."
+    echo "Added semver hooks to your $HOOKS_DIR directory."
     echo
 
     # Ask the user for automatic tag messages.
@@ -74,7 +74,7 @@ d,defaults!       Set default configuration
         echo 
 
         # Ask for hotfix message template.
-        default_suggestion="Hotfix %tag%"
+        default_suggestion=$(git config --get gitflow.hotfix.finish.message || echo "Hotfix %tag%")
         echo -n "Hotfix tag message template? [$default_suggestion] "
         if flag defaults; then
             echo
@@ -86,7 +86,7 @@ d,defaults!       Set default configuration
         git config gitflow.hotfix.finish.message "$message_tmpl"
 
         # Ask for hotfix message template.
-        default_suggestion="Release %tag%"
+        default_suggestion=$(git config --get gitflow.release.finish.message || echo "Release %tag%")
         echo -n "Release tag message template? [$default_suggestion] "
         if flag defaults; then
             echo
@@ -97,11 +97,54 @@ d,defaults!       Set default configuration
 
         git config gitflow.release.finish.message "$message_tmpl"
 
+        # Ask for version filename.
+        default_suggestion=$(git config --get gitflow.semver.filename || echo ".version")
+        echo -n "Version filename (where version numbers will be stored)? [$default_suggestion] "
+        if flag defaults; then
+            echo
+        else
+            read answer
+        fi
+        [ "$answer" = "-" ] && version_filename= || version_filename=${answer:-$default_suggestion}
+
+        if [ "$version_filename" != "$default_suggestion" ]; then
+            git config gitflow.semver.filename "$version_filename"
+        fi
+
         echo
     fi
+}
+
+cmd_remove() {
+	OPTIONS_SPEC="\
+git flow semver [remove] [-h]
+
+Removes semantic versioning support for this repo
+--
+h,help!           Show this help
+"
+
+	# Parse arguments
+	parse_args "$@"
+
+    # Remove symlinks to git hooks. 
+    for f in $(find $SRC_HOOKS_DIR -maxdepth 1 -type f -executable); do
+        rm $GIT_CURRENT_REPO_DIR/$HOOKS_DIR/$(basename $f) 2>/dev/null
+    done
+
+    echo "Removed semver hooks from your $HOOKS_DIR directory."
+
+    # Remove configuration entries.
+    for key in gitflow.release.finish.message gitflow.hotfix.finish.message gitflow.semver.filename; do
+        git config --unset-all $key
+    done
+
+    echo "Removed configuration entries."
+    echo
 }
 
 cmd_help() {
 	usage
 	exit 0
 }
+
