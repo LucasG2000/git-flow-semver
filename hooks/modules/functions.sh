@@ -7,6 +7,10 @@ ICON_CROSS=$(printf $COLOR_RED'✘'$COLOR_DEFAULT)
 ROOT_DIR=$(git rev-parse --show-toplevel 2> /dev/null)
 BASE_DIR=$(cd $(dirname $BASH_SOURCE[0])/..; pwd)
 
+function warn {
+    echo "$@" >&2
+}
+
 function __print_fail {
     echo -e "  $ICON_CROSS $1"
 }
@@ -23,18 +27,3 @@ function __get_version_file {
     echo "$ROOT_DIR/$VERSION_FILE"
 }
 
-function __get_hotfix_version_bumplevel {
-    if [ -z "$VERSION_BUMPLEVEL_HOTFIX" ]; then
-        VERSION_BUMPLEVEL_HOTFIX="PATCH"
-    fi
-
-    echo $VERSION_BUMPLEVEL_HOTFIX
-}
-
-function __get_release_version_bumplevel {
-    if [ -z "$VERSION_BUMPLEVEL_RELEASE" ]; then
-        VERSION_BUMPLEVEL_RELEASE="MINOR"
-    fi
-
-    echo $VERSION_BUMPLEVEL_RELEASE
-}

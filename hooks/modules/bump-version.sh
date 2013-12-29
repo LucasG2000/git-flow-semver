@@ -1,16 +1,9 @@
 #!/usr/bin/env bash
 
 if [ -z "$VERSION" ]; then
-    if [ "$1" == "hotfix" ]; then
-        VERSION=$(__get_hotfix_version_bumplevel)
-    elif [ "$1" == "release" ]; then
-        VERSION=$(__get_release_version_bumplevel)
-    else
-        VERSION="PATCH"
-    fi
+    VERSION=$(echo $1 || echo "hotfix")
 fi
 
-VERSION_FILE=$(__get_version_file)
 VERSION=$($BASE_DIR/modules/semverbump.sh $VERSION)
 
 if [ $? -ne 0 ]; then
